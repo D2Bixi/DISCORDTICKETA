@@ -32,6 +32,8 @@ export const transcripts = pgTable("transcripts", {
 export const announcements = pgTable("announcements", {
   id: serial("id").primaryKey(),
   content: text("content").notNull(),
+  imageUrl: text("image_url"),
+  linkUrl: text("link_url"),
   targetChannelId: text("target_channel_id").notNull(),
   sentAt: timestamp("sent_at").defaultNow(),
 });

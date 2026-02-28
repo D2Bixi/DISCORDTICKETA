@@ -8,15 +8,22 @@ This guide explains how to host this application on a Linux (Ubuntu) VPS.
 - PostgreSQL Database
 - Discord Bot Token and Guild ID
 
-## Step 1: Install Dependencies
+## Local Host Development
+1. Clone the repo: `git clone <repo-url>`
+2. Install dependencies: `npm install`
+3. Set up `.env` with `DATABASE_URL`, `DISCORD_TOKEN`, `GUILD_ID`.
+4. Run `npm run dev` to start the dashboard on `localhost:5000`.
+
+## Live Deployment on VPS (Ubuntu)
+### Step 1: Install Dependencies
 Connect to your VPS via SSH and run:
 ```bash
 sudo apt update && sudo apt upgrade -y
-curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -B bash -
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
 sudo apt install -y nodejs postgresql postgresql-contrib git
 ```
 
-## Step 2: Set up Database
+### Step 2: Set up Database
 ```bash
 sudo -u postgres psql
 CREATE DATABASE ticketbot;
@@ -25,14 +32,14 @@ GRANT ALL PRIVILEGES ON DATABASE ticketbot TO botuser;
 \q
 ```
 
-## Step 3: Clone and Install
+### Step 3: Clone and Install
 ```bash
 git clone <your-repo-url>
-cd discord-ticket-bot
+cd Discord-Bot-Hub
 npm install
 ```
 
-## Step 4: Configure Environment
+### Step 4: Configure Environment
 Create a `.env` file:
 ```env
 DATABASE_URL=postgresql://botuser:your_secure_password@localhost:5432/ticketbot
@@ -41,17 +48,17 @@ GUILD_ID=your_guild_id
 PORT=5000
 ```
 
-## Step 5: Initialize Database
+### Step 5: Initialize Database
 ```bash
 npm run db:push
 ```
 
-## Step 6: Build and Run
+### Step 6: Build and Run
 We recommend using `pm2` to keep the bot running 24/7.
 ```bash
 sudo npm install -g pm2
 npm run build
-pm2 start dist/server/index.js --name "ticket-bot"
+pm2 start dist/index.cjs --name "ticket-bot"
 pm2 save
 pm2 startup
 ```
@@ -61,3 +68,5 @@ pm2 startup
 - **Ticket Category**: `1477281399898767531` (Where open tickets appear)
 - **Transcript Logs**: `1477281808792944731` (Where closed ticket logs are sent)
 - **Auto-Sync**: Bot automatically checks and cleans up ticket status on startup.
+- **Announcement Advanced Features**: Admins can add Images, Links, and Emojis to broadcasts.
+- **Anonymous Support**: Staff replies from the dashboard show a random staff name for privacy.

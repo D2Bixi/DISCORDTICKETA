@@ -97,7 +97,12 @@ export async function registerRoutes(
       const announcement = await storage.createAnnouncement(input);
       
       // Send to discord
-      await sendAnnouncement(announcement.targetChannelId, announcement.content);
+      await sendAnnouncement(
+        announcement.targetChannelId, 
+        announcement.content, 
+        announcement.imageUrl || undefined,
+        announcement.linkUrl || undefined
+      );
       
       res.status(201).json(announcement);
     } catch (err) {

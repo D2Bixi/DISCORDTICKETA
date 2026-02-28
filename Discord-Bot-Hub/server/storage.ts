@@ -82,7 +82,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createAnnouncement(announcement: InsertAnnouncement): Promise<Announcement> {
-    const [newAnnouncement] = await db.insert(announcements).values(announcement).returning();
+    const [newAnnouncement] = await db.insert(announcements).values({
+      content: announcement.content,
+      imageUrl: announcement.imageUrl,
+      linkUrl: announcement.linkUrl,
+      targetChannelId: announcement.targetChannelId,
+    }).returning();
     return newAnnouncement;
   }
 }

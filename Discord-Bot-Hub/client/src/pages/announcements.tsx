@@ -35,6 +35,8 @@ export default function AnnouncementsPage() {
     defaultValues: {
       content: "",
       targetChannelId: "",
+      imageUrl: "",
+      linkUrl: "",
     },
   });
 
@@ -45,6 +47,11 @@ export default function AnnouncementsPage() {
       }
     });
   }
+
+  const addEmoji = (emoji: string) => {
+    const content = form.getValues("content");
+    form.setValue("content", content + emoji);
+  };
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -100,11 +107,25 @@ export default function AnnouncementsPage() {
                     name="content"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-foreground">Message Content</FormLabel>
+                        <FormLabel className="text-foreground flex justify-between items-center">
+                          Message Content
+                          <div className="flex gap-1">
+                            {["📢", "🔥", "✨", "✅", "⚠️", "🚀", "🎉", "🎫", "🛠️", "🚨"].map(emoji => (
+                              <button 
+                                key={emoji}
+                                type="button" 
+                                onClick={() => addEmoji(emoji)}
+                                className="hover:bg-primary/20 p-1 rounded transition-colors"
+                              >
+                                {emoji}
+                              </button>
+                            ))}
+                          </div>
+                        </FormLabel>
                         <FormControl>
                           <Textarea 
                             placeholder="Type your announcement here... Markdown is supported." 
-                            className="min-h-[160px] resize-none bg-background/50 border-white/10 focus-visible:ring-primary text-base p-4" 
+                            className="min-h-[120px] resize-none bg-background/50 border-white/10 focus-visible:ring-primary text-base p-4" 
                             {...field} 
                           />
                         </FormControl>
@@ -112,6 +133,44 @@ export default function AnnouncementsPage() {
                       </FormItem>
                     )}
                   />
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="imageUrl"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-foreground">Image URL (Optional)</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="https://..." 
+                              className="bg-background/50 border-white/10 focus-visible:ring-primary h-10" 
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="linkUrl"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-foreground">Link URL (Optional)</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="https://..." 
+                              className="bg-background/50 border-white/10 focus-visible:ring-primary h-10" 
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
 
                   <Button 
                     type="submit" 

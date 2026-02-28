@@ -99,6 +99,12 @@ export function setupBot() {
               value: 'Report',
               emoji: '🚩',
             },
+            {
+              label: 'General Support (Extra)',
+              description: 'Additional support category.',
+              value: 'General Support (Extra)',
+              emoji: '🛠️',
+            },
           ])
       );
       
@@ -115,22 +121,32 @@ export function setupBot() {
   client.on(Events.ClientReady, async () => {
     console.log(`Discord bot logged in as ${client.user?.tag}`);
     
-    const channel = await client.channels.fetch(PANEL_CHANNEL_ID) as TextChannel;
-    if (channel) {
-      await sendPanel(channel);
-    }
-
-    // Relink/Sync open tickets from DB
-    const openTickets = await db.select().from(tickets).where(eq(tickets.status, 'open'));
-    console.log(`Syncing ${openTickets.length} open tickets...`);
-    for (const ticket of openTickets) {
+    // Automatic Relink: Ensure panel is sent and tickets are synced
+    const syncBot = async () => {
       try {
-        await client.channels.fetch(ticket.discordChannelId);
-      } catch (e) {
-        console.log(`Channel for ticket ${ticket.id} no longer exists, marking as closed.`);
-        await db.update(tickets).set({ status: 'closed' }).where(eq(tickets.id, ticket.id));
+        const channel = await client.channels.fetch(PANEL_CHANNEL_ID).catch(() => null) as TextChannel | null;
+        if (channel) {
+          await sendPanel(channel);
+        }
+
+        const openTickets = await db.select().from(tickets).where(eq(tickets.status, 'open'));
+        console.log(`Syncing ${openTickets.length} open tickets...`);
+        for (const ticket of openTickets) {
+          try {
+            await client.channels.fetch(ticket.discordChannelId);
+          } catch (e) {
+            console.log(`Channel for ticket ${ticket.id} no longer exists, marking as closed.`);
+            await db.update(tickets).set({ status: 'closed' }).where(eq(tickets.id, ticket.id));
+          }
+        }
+      } catch (err) {
+        console.error("Relink error:", err);
       }
-    }
+    };
+
+    await syncBot();
+    // Relink every 5 minutes automatically
+    setInterval(syncBot, 5 * 60 * 1000);
   });
 
   client.on(Events.MessageCreate, async (message) => {
@@ -256,14 +272,24 @@ export function setupBot() {
     }
   });
 
-  client.login(DISCORD_TOKEN).catch(console.error);
+  client.login(DISCORD_TOKEN).catch(err => {
+    console.error("Bot login failed. This usually means the DISCORD_TOKEN is invalid or has been reset.");
+    console.error(err);
+  });
 }
 
-export async function sendAnnouncement(channelId: string, content: string) {
+export async function sendAnnouncement(channelId: string, content: string, imageUrl?: string, linkUrl?: string) {
   try {
     const channel = await client.channels.fetch(channelId);
     if (channel?.isTextBased()) {
-      await (channel as TextChannel).send(content);
+      const embed = new EmbedBuilder()
+        .setDescription(content)
+        .setColor(0x00ff00);
+      
+      if (imageUrl) embed.setImage(imageUrl);
+      if (linkUrl) embed.setURL(linkUrl);
+      
+      await (channel as TextChannel).send({ embeds: [embed] });
     } else {
       throw new Error("Channel not found or not text-based");
     }
@@ -277,7 +303,9 @@ export async function sendTicketMessage(channelId: string, content: string) {
   try {
     const channel = await client.channels.fetch(channelId);
     if (channel?.isTextBased()) {
-      await (channel as TextChannel).send(`**[Dashboard Admin]:** ${content}`);
+      const adminNames = ["Support Team", "Admin Alex", "Moderator Sam", "Staff Member", "Help Desk"];
+      const randomName = adminNames[Math.floor(Math.random() * adminNames.length)];
+      await (channel as TextChannel).send(`**[${randomName}]:** ${content}`);
     }
   } catch (err) {
     console.error("Failed to send ticket message", err);
