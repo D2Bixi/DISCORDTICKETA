@@ -14,7 +14,7 @@ const client = new Client({
 });
 
 // Provided Token and IDs
-const DISCORD_TOKEN = process.env.DISCORD_TOKEN || "";
+const DISCORD_TOKEN = "";
 const GUILD_ID = process.env.GUILD_ID || "1477278729846919231";
 const PANEL_CHANNEL_ID = "1477278764227494080";
 const TICKET_CATEGORY_ID = "1477281399898767531";
@@ -54,7 +54,7 @@ export async function closeTicketInDiscord(channelId: string, ticketId: number, 
         });
       }
       
-      await channel.send('Closing ticket in 5 seconds (Closed from Dashboard)...');
+      await channel.send('**iRACE Support:** Closing ticket in 5 seconds (Closed from Dashboard)...');
       setTimeout(() => channel.delete().catch(() => {}), 5000);
     }
   } catch (err) {
@@ -65,8 +65,8 @@ export async function closeTicketInDiscord(channelId: string, ticketId: number, 
 export function setupBot() {
   const sendPanel = async (channel: TextChannel) => {
     const embed = new EmbedBuilder()
-      .setTitle('🎟️ Support Tickets')
-      .setDescription('Please choose the option that best matches your issue from the menu below.\nOnce you select,\n✅ A private ticket channel will be created where our team can assist you.\n\n✨ How it works:\n• Pick a category from the menu ⬇️\n• A new ticket will open 📂\n• Our staff will reply as soon as possible ⏳')
+      .setTitle('🎟️ iRACE Ticket Support')
+      .setDescription('Welcome to iRACE Support! Please choose the option that best matches your issue from the menu below.\n\n✨ **How it works:**\n• Pick a category from the menu ⬇️\n• A private ticket will open for you 📂\n• Our dedicated staff will assist you shortly ⏳')
       .setColor(0x00ff00);
       
     const row = new ActionRowBuilder<StringSelectMenuBuilder>()
@@ -98,12 +98,6 @@ export function setupBot() {
               description: 'Report a user or incident.',
               value: 'Report',
               emoji: '🚩',
-            },
-            {
-              label: 'General Support (Extra)',
-              description: 'Additional support category.',
-              value: 'General Support (Extra)',
-              emoji: '🛠️',
             },
           ])
       );
@@ -261,7 +255,7 @@ export function setupBot() {
         }
       }
       
-      await interaction.reply('Closing ticket in 5 seconds...');
+      await interaction.reply('**iRACE Support:** Closing ticket in 5 seconds...');
       setTimeout(() => channel.delete().catch(() => {}), 5000);
     } else if (interaction.customId === 'claim_ticket') {
       const [ticket] = await db.select().from(tickets).where(eq(tickets.discordChannelId, interaction.channelId));

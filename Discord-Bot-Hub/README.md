@@ -1,72 +1,50 @@
-# Discord Ticket Bot & Dashboard Deployment Guide
+# iRACE Announcement & Ticket Bot
 
-This guide explains how to host this application on a Linux (Ubuntu) VPS.
+A high-performance Discord management system featuring a web-based dashboard and an integrated ticket support bot.
 
-## Prerequisites
-- A Linux VPS (Ubuntu 20.04/22.04 recommended)
-- Node.js (v18 or higher)
-- PostgreSQL Database
-- Discord Bot Token and Guild ID
+## Features
+- **iRACE Ticket System**: Automated ticket creation with categories (General, Bug, Billing, Report).
+- **Advanced Announcements**: Send rich embeds with images, links, and custom emojis.
+- **Real-time Dashboard**: Monitor and respond to tickets directly from your browser.
+- **Transcript Logging**: Automatically save and log ticket conversations.
 
-## Local Host Development
-1. Clone the repo: `git clone <repo-url>`
-2. Install dependencies: `npm install`
-3. Set up `.env` with `DATABASE_URL`, `DISCORD_TOKEN`, `GUILD_ID`.
-4. Run `npm run dev` to start the dashboard on `localhost:5000`.
+## How to Host
 
-## Live Deployment on VPS (Ubuntu)
-### Step 1: Install Dependencies
-Connect to your VPS via SSH and run:
-```bash
-sudo apt update && sudo apt upgrade -y
-curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-sudo apt install -y nodejs postgresql postgresql-contrib git
-```
+### 1. Local Hosting (Development)
+1. **Prerequisites**: Install Node.js (v18+) and PostgreSQL.
+2. **Setup Database**: Create a database named `irace_bot`.
+3. **Environment Variables**: Create a `.env` file in the root:
+   ```env
+   DATABASE_URL=postgresql://user:password@localhost:5432/irace_bot
+   DISCORD_TOKEN=your_bot_token
+   GUILD_ID=your_guild_id
+   ```
+4. **Install Dependencies**:
+   ```bash
+   cd Discord-Bot-Hub
+   npm install
+   ```
+5. **Push Schema**:
+   ```bash
+   npm run db:push
+   ```
+6. **Start App**:
+   ```bash
+   npm run dev
+   ```
+   Access the dashboard at `http://localhost:5000`.
 
-### Step 2: Set up Database
-```bash
-sudo -u postgres psql
-CREATE DATABASE ticketbot;
-CREATE USER botuser WITH PASSWORD 'your_secure_password';
-GRANT ALL PRIVILEGES ON DATABASE ticketbot TO botuser;
-\q
-```
+### 2. Hosting on Replit (Production)
+1. **Import**: Clone/Import the repository to Replit.
+2. **Secrets**: Add `DISCORD_TOKEN` and `GUILD_ID` to Replit Secrets.
+3. **Database**: Replit's PostgreSQL integration is automatically detected.
+4. **Deploy**:
+   - The project is pre-configured for **VM Deployment** (Always-on).
+   - Click "Deploy" and ensure the run command is `npm start`.
 
-### Step 3: Clone and Install
-```bash
-git clone <your-repo-url>
-cd Discord-Bot-Hub
-npm install
-```
-
-### Step 4: Configure Environment
-Create a `.env` file:
-```env
-DATABASE_URL=postgresql://botuser:your_secure_password@localhost:5432/ticketbot
-DISCORD_TOKEN=your_bot_token
-GUILD_ID=your_guild_id
-PORT=5000
-```
-
-### Step 5: Initialize Database
-```bash
-npm run db:push
-```
-
-### Step 6: Build and Run
-We recommend using `pm2` to keep the bot running 24/7.
-```bash
-sudo npm install -g pm2
-npm run build
-pm2 start dist/index.cjs --name "ticket-bot"
-pm2 save
-pm2 startup
-```
-
-## Features Configured
-- **Panel Channel**: `1477278764227494080` (Auto-spawns ticket menu)
-- **Ticket Category**: `1477281399898767531` (Where open tickets appear)
-- **Transcript Logs**: `1477281808792944731` (Where closed ticket logs are sent)
-- **Auto-Sync**: Bot automatically checks and cleans up ticket status on startup.
-- **Announcement Advanced Features**: Admins can add Images, Links, and Emojis to broadcasts.
-- **Anonymous Support**: Staff replies from the dashboard show a random staff name for privacy.
+## Advanced Features Added
+- **Dynamic Emoji Picker**: 30+ emojis available for announcements.
+- **Image Upload Interface**: Included in the broadcast composer for visual announcements.
+- **iRACE Branding**: Custom embed styling and dashboard UI.
+- **Auto-Sync**: The bot automatically cleans up stale channels and syncs status every 5 minutes.
+- **Anonymous Support**: Dashboard replies use rotating staff pseudonyms for privacy.

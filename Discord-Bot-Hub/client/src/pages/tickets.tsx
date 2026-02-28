@@ -63,8 +63,8 @@ export default function TicketsPage() {
     <div className="space-y-8 animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-display font-bold bg-gradient-to-br from-white to-white/60 bg-clip-text text-transparent">Support Tickets</h1>
-          <p className="text-muted-foreground mt-1">Monitor and respond to user inquiries from Discord.</p>
+          <h1 className="text-3xl font-display font-bold bg-gradient-to-br from-white to-white/60 bg-clip-text text-transparent">iRACE Support Hub</h1>
+          <p className="text-muted-foreground mt-1">Manage iRACE Discord inquiries and support tickets.</p>
         </div>
         <div className="flex gap-2">
            <Badge variant="outline" className="px-3 py-1.5 text-sm bg-card border-white/10">

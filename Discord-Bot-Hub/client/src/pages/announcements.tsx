@@ -2,7 +2,14 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { formatDistanceToNow } from "date-fns";
-import { Megaphone, Send, History, Hash, MessageSquare, Loader2 } from "lucide-react";
+import { Megaphone, Send, History, Hash, MessageSquare, Loader2, Smile } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+
+const ALL_EMOJIS = ["📢", "🔥", "✨", "✅", "⚠️", "🚀", "🎉", "🎫", "🛠️", "🚨", "❓", "🐛", "💳", "🚩", "🤝", "💡", "🔔", "🌟", "🌈", "🎈", "🎁", "🏆", "🎮", "💻", "📱", "🔒", "🔑", "💎"];
 
 import { useAnnouncements, useCreateAnnouncement } from "@/hooks/use-announcements";
 import { insertAnnouncementSchema } from "@shared/schema";
@@ -58,9 +65,9 @@ export default function AnnouncementsPage() {
       <div>
         <h1 className="text-3xl font-display font-bold flex items-center gap-3">
           <Megaphone className="h-8 w-8 text-primary" />
-          Announcements
+          iRACE Broadcasts
         </h1>
-        <p className="text-muted-foreground mt-1">Broadcast messages to specific Discord channels directly from the dashboard.</p>
+        <p className="text-muted-foreground mt-1">Send official iRACE announcements to Discord channels.</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -109,17 +116,42 @@ export default function AnnouncementsPage() {
                       <FormItem>
                         <FormLabel className="text-foreground flex justify-between items-center">
                           Message Content
-                          <div className="flex gap-1">
-                            {["📢", "🔥", "✨", "✅", "⚠️", "🚀", "🎉", "🎫", "🛠️", "🚨"].map(emoji => (
-                              <button 
-                                key={emoji}
-                                type="button" 
-                                onClick={() => addEmoji(emoji)}
-                                className="hover:bg-primary/20 p-1 rounded transition-colors"
-                              >
-                                {emoji}
-                              </button>
-                            ))}
+                          <div className="flex gap-2 items-center">
+                            <div className="flex gap-1">
+                              {["📢", "🔥", "✨", "✅", "⚠️"].map(emoji => (
+                                <button 
+                                  key={emoji}
+                                  type="button" 
+                                  onClick={() => addEmoji(emoji)}
+                                  className="hover:bg-primary/20 p-1 rounded transition-colors"
+                                >
+                                  {emoji}
+                                </button>
+                              ))}
+                            </div>
+                            <Separator orientation="vertical" className="h-4 bg-white/10" />
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button variant="ghost" size="sm" className="h-8 px-2 hover:bg-primary/20">
+                                  <Smile className="h-4 w-4 mr-1" />
+                                  More
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-64 glass-panel border-white/10 p-2">
+                                <div className="grid grid-cols-6 gap-1">
+                                  {ALL_EMOJIS.map(emoji => (
+                                    <button 
+                                      key={emoji}
+                                      type="button" 
+                                      onClick={() => addEmoji(emoji)}
+                                      className="hover:bg-primary/20 p-2 rounded transition-colors text-lg"
+                                    >
+                                      {emoji}
+                                    </button>
+                                  ))}
+                                </div>
+                              </PopoverContent>
+                            </Popover>
                           </div>
                         </FormLabel>
                         <FormControl>
@@ -134,19 +166,34 @@ export default function AnnouncementsPage() {
                     )}
                   />
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4">
                     <FormField
                       control={form.control}
                       name="imageUrl"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-foreground">Image URL (Optional)</FormLabel>
+                          <FormLabel className="text-foreground">Image URL</FormLabel>
                           <FormControl>
-                            <Input 
-                              placeholder="https://..." 
-                              className="bg-background/50 border-white/10 focus-visible:ring-primary h-10" 
-                              {...field} 
-                            />
+                            <div className="flex gap-2">
+                              <Input 
+                                placeholder="https://..." 
+                                className="bg-background/50 border-white/10 focus-visible:ring-primary h-10 flex-1" 
+                                {...field} 
+                              />
+                              <Button 
+                                type="button" 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => {
+                                  // In a real app, this would open a file picker and upload
+                                  // For now, we'll prompt for a URL or just leave the input
+                                  const url = prompt("Enter image URL:");
+                                  if (url) field.onChange(url);
+                                }}
+                              >
+                                Upload
+                              </Button>
+                            </div>
                           </FormControl>
                           <FormMessage />
                         </FormItem>

@@ -123,8 +123,10 @@ export async function registerRoutes(
 async function seedDatabase() {
   const existingTickets = await storage.getTickets();
   if (existingTickets.length === 0) {
-    await storage.createTicket({ discordChannelId: "123", creatorId: "456", topic: "Need help with billing" });
-    await storage.createTicket({ discordChannelId: "124", creatorId: "789", topic: "Bug report" });
+    await storage.createTicket({ discordChannelId: "123", creatorId: "456", topic: "General Support" });
+    await storage.createTicket({ discordChannelId: "124", creatorId: "789", topic: "Bug Report" });
+    await storage.createTicket({ discordChannelId: "125", creatorId: "101", topic: "Billing Support" });
+    await storage.createTicket({ discordChannelId: "126", creatorId: "202", topic: "Report" });
   }
 }
 seedDatabase().catch(console.error);
