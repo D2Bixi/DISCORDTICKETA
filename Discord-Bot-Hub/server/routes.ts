@@ -3,7 +3,7 @@ import type { Server } from "http";
 import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
-import { setupBot, sendAnnouncement, sendTicketMessage } from "./bot";
+import { setupBot, sendAnnouncement, sendTicketMessage, closeTicketInDiscord } from "./bot";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -27,12 +27,21 @@ export async function registerRoutes(
     res.json(ticket);
   });
 
-  app.patch(api.tickets.update.path, async (req, res) => {
-    try {
-      const input = api.tickets.update.input.parse(req.body);
-      const ticket = await storage.updateTicket(Number(req.params.id), input);
-      res.json(ticket);
-    } catch (err) {
+  
+    app.patch(api.tickets.update.path, async (req, res) => {
+      try {
+        const input = api.tickets.update.input.parse(req.body);
+        const ticketId = Number(req.params.id);
+        const oldTicket = await storage.getTicket(ticketId);
+        const ticket = await storage.updateTicket(ticketId, input);
+        
+        if (input.status === 'closed' && oldTicket && oldTicket.status !== 'closed') {
+          await closeTicketInDiscord(ticket.discordChannelId, ticket.id, ticket.creatorId, ticket.topic);
+        }
+        
+        res.json(ticket);
+      } catch (err) {
+  
       if (err instanceof z.ZodError) {
         return res.status(400).json({
           message: err.errors[0].message,

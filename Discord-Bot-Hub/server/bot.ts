@@ -20,53 +20,104 @@ const PANEL_CHANNEL_ID = "1477278764227494080";
 const TICKET_CATEGORY_ID = "1477281399898767531";
 const TRANSCRIPT_CHANNEL_ID = "1477281808792944731";
 
+export async function closeTicketInDiscord(channelId: string, ticketId: number, creatorId: string, topic: string) {
+  try {
+    const channel = await client.channels.fetch(channelId) as TextChannel;
+    if (channel) {
+      const messages = await channel.messages.fetch({ limit: 100 });
+      const transcriptData = messages.reverse().map(m => ({ author: m.author.tag, content: m.content, time: m.createdAt }));
+
+      await db.insert(transcripts).values({
+        ticketId: ticketId,
+        content: JSON.stringify(transcriptData),
+      });
+
+      // Send transcript to log channel
+      const logChannel = await client.channels.fetch(TRANSCRIPT_CHANNEL_ID) as TextChannel;
+      if (logChannel) {
+        const transcriptEmbed = new EmbedBuilder()
+          .setTitle(`Transcript - Ticket #${ticketId}`)
+          .addFields(
+            { name: 'Creator', value: `<@${creatorId}>`, inline: true },
+            { name: 'Topic', value: topic, inline: true },
+            { name: 'Status', value: 'Closed (Dashboard)', inline: true }
+          )
+          .setColor(0xff0000)
+          .setTimestamp();
+        
+        const transcriptText = transcriptData.map(m => `[${m.time}] ${m.author}: ${m.content}`).join('\n');
+        const buffer = Buffer.from(transcriptText, 'utf-8');
+        
+        await logChannel.send({ 
+          embeds: [transcriptEmbed], 
+          files: [{ attachment: buffer, name: `transcript-${ticketId}.txt` }] 
+        });
+      }
+      
+      await channel.send('Closing ticket in 5 seconds (Closed from Dashboard)...');
+      setTimeout(() => channel.delete().catch(() => {}), 5000);
+    }
+  } catch (err) {
+    console.error("Failed to close ticket in Discord", err);
+  }
+}
+
 export function setupBot() {
+  const sendPanel = async (channel: TextChannel) => {
+    const embed = new EmbedBuilder()
+      .setTitle('🎟️ Support Tickets')
+      .setDescription('Please choose the option that best matches your issue from the menu below.\nOnce you select,\n✅ A private ticket channel will be created where our team can assist you.\n\n✨ How it works:\n• Pick a category from the menu ⬇️\n• A new ticket will open 📂\n• Our staff will reply as soon as possible ⏳')
+      .setColor(0x00ff00);
+      
+    const row = new ActionRowBuilder<StringSelectMenuBuilder>()
+      .addComponents(
+        new StringSelectMenuBuilder()
+          .setCustomId('open_ticket_menu')
+          .setPlaceholder('Select ticket category...')
+          .addOptions([
+            {
+              label: 'General Support',
+              description: 'Get help with general questions.',
+              value: 'General Support',
+              emoji: '❓',
+            },
+            {
+              label: 'Bug Report',
+              description: 'Report a technical issue or bug.',
+              value: 'Bug Report',
+              emoji: '🐛',
+            },
+            {
+              label: 'Billing Support',
+              description: 'Issues related to payments or subscriptions.',
+              value: 'Billing Support',
+              emoji: '💳',
+            },
+            {
+              label: 'Report',
+              description: 'Report a user or incident.',
+              value: 'Report',
+              emoji: '🚩',
+            },
+          ])
+      );
+      
+    // Clear previous bot messages in panel channel to avoid duplicates
+    const messages = await channel.messages.fetch({ limit: 50 });
+    const botMessages = messages.filter(m => m.author.id === client.user?.id);
+    if (botMessages.size > 0) {
+      await channel.bulkDelete(botMessages).catch(() => {});
+    }
+
+    await channel.send({ embeds: [embed], components: [row] });
+  };
+
   client.on(Events.ClientReady, async () => {
     console.log(`Discord bot logged in as ${client.user?.tag}`);
     
-    // Auto-spawn or update panel
     const channel = await client.channels.fetch(PANEL_CHANNEL_ID) as TextChannel;
     if (channel) {
-      // Clear previous bot messages in panel channel to avoid duplicates
-      const messages = await channel.messages.fetch({ limit: 50 });
-      const botMessages = messages.filter(m => m.author.id === client.user?.id);
-      if (botMessages.size > 0) {
-        await channel.bulkDelete(botMessages).catch(() => {});
-      }
-
-      const embed = new EmbedBuilder()
-        .setTitle('Support System')
-        .setDescription('Select the category that matches your request to open a ticket.')
-        .setColor(0x00ff00);
-        
-      const row = new ActionRowBuilder<StringSelectMenuBuilder>()
-        .addComponents(
-          new StringSelectMenuBuilder()
-            .setCustomId('open_ticket_menu')
-            .setPlaceholder('Select ticket category...')
-            .addOptions([
-              {
-                label: 'Bug Report',
-                description: 'Report a technical issue or bug.',
-                value: 'bug',
-                emoji: '🐛',
-              },
-              {
-                label: 'General Support',
-                description: 'Get help with general questions.',
-                value: 'support',
-                emoji: '❓',
-              },
-              {
-                label: 'Billing',
-                description: 'Issues related to payments or subscriptions.',
-                value: 'billing',
-                emoji: '💳',
-              },
-            ])
-        );
-        
-      await channel.send({ embeds: [embed], components: [row] });
+      await sendPanel(channel);
     }
 
     // Relink/Sync open tickets from DB
@@ -85,7 +136,6 @@ export function setupBot() {
   client.on(Events.MessageCreate, async (message) => {
     if (message.author.bot) return;
     
-    // Log messages to DB for dashboard
     const [ticket] = await db.select().from(tickets).where(eq(tickets.discordChannelId, message.channelId));
     if (ticket && ticket.status !== 'closed') {
       await db.insert(ticketMessages).values({
@@ -123,7 +173,6 @@ export function setupBot() {
         ],
       });
       
-      // Save ticket to DB
       await db.insert(tickets).values({
         discordChannelId: channel.id,
         creatorId: interaction.user.id,
@@ -150,6 +199,12 @@ export function setupBot() {
         
       await channel.send({ content: `<@${interaction.user.id}>`, embeds: [embed], components: [row] });
       await interaction.reply({ content: `Ticket created: <#${channel.id}>`, ephemeral: true });
+
+      // Refresh panel
+      const panelChannel = await client.channels.fetch(PANEL_CHANNEL_ID) as TextChannel;
+      if (panelChannel) {
+        await sendPanel(panelChannel);
+      }
     }
 
     if (!interaction.isButton()) return;
@@ -168,7 +223,6 @@ export function setupBot() {
           content: JSON.stringify(transcriptData),
         });
 
-        // Send transcript to log channel
         const logChannel = await client.channels.fetch(TRANSCRIPT_CHANNEL_ID) as TextChannel;
         if (logChannel) {
           const transcriptEmbed = new EmbedBuilder()
@@ -209,7 +263,7 @@ export async function sendAnnouncement(channelId: string, content: string) {
   try {
     const channel = await client.channels.fetch(channelId);
     if (channel?.isTextBased()) {
-      await channel.send(content);
+      await (channel as TextChannel).send(content);
     } else {
       throw new Error("Channel not found or not text-based");
     }
